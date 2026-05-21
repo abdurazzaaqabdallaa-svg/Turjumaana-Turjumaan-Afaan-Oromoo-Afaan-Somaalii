@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="or">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turjumaan Sagalee Oromoo ↔ Somaalii</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+        }
+        h2 {
+            color: #28a745;
+            text-align: center;
+            margin-top: 0;
+        }
+        .lang-select {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        select {
+            padding: 8px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: none;
+            box-sizing: border-box;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+        }
+        .btn-speak { background-color: #007bff; }
+        .btn-trans { background-color: #28a745; }
+        .btn-listen { background-color: #17a2b8; }
+        .output-box {
+            width: 100%;
+            min-height: 100px;
+            background-color: #e9ecef;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            border: 1px solid #ced4da;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <h2>Turjumaan Sagalee</h2>
+    
+    <div class="lang-select">
+        <select id="sourceLang">
+            <option value="om-ET">Afaan Oromoo</option>
+            <option value="so-SO">Afaan Somaalii</option>
+        </select>
+        <span>➔</span>
+        <select id="targetLang">
+            <option value="so-SO">Afaan Somaalii</option>
+            <option value="om-ET">Afaan Oromoo</option>
+        </select>
+    </div>
+
+    <textarea id="inputText" placeholder="Dubbadhu ykn asitti barreessi..."></textarea>
+    
+    <div class="btn-group">
+        <button class="btn-speak" id="startSpeech">Sagalee Waraabi</button>
+        <button class="btn-trans" id="translateBtn">Hiiki</button>
+    </div>
+
+    <div class="output-box" id="outputText">Firii hiikkaa...</div>
+    
+    <div class="btn-group">
+        <button class="btn-listen" id="playSpeech">Sagaleen Dhaggeeffadhu</button>
+    </div>
+</div>
+
+<script>
+    const sourceLang = document.getElementById('sourceLang');
+    const targetLang = document.getElementById('targetLang');
+    const inputText = document.getElementById('inputText');
+    const outputText = document.getElementById('outputText');
+    const startSpeech = document.getElementById('startSpeech');
+    const translateBtn = document.getElementById('translateBtn');
+    const playSpeech = document.getElementById('playSpeech');
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        
+        startSpeech.addEventListener('click', () => {
+            recognition.lang = sourceLang.value;
+            recognition.start();
+            startSpeech.textContent = "Si dhaggeeffachaa jira...";
+        });
+
+        recognition.onresult = (event) => {
+            inputText.value = event.results[0][0].transcript;
+            startSpeech.textContent = "Sagalee Waraabi";
+        };
+
+        recognition.onerror = () => {
+            startSpeech.textContent = "Sagalee Waraabi";
+        };
+        
+        recognition.onend = () => {
+            startSpeech.textContent = "Sagalee Waraabi";
+        };
+    } else {
+        startSpeech.style.display = 'none';
+    }
+
+    translateBtn.addEventListener('click', () => {
+        const text = inputText.value;
+        if (!text) return;
+
+        const from = sourceLang.value.split('-')[0];
+        const to = targetLang.value.split('-')[0];
+        
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                outputText.textContent = data[0][0][0];
+            })
+            .catch(() => {
+                outputText.textContent = "Dogoggorri uumameera.";
+            });
+    });
+
+    playSpeech.addEventListener('click', () => {
+        const text = outputText.textContent;
+        if (!text || text === "Firii hiikkaa..." || text === "Dogoggorri uumameera.") return;
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = targetLang.value;
+        window.speechSynthesis.speak(utterance);
+    });
+
+    sourceLang.addEventListener('change', () => {
+        if (sourceLang.value === "om-ET") {
+            targetLang.value = "so-SO";
+        } else {
+            targetLang.value = "om-ET";
+        }
+    });
+
+    targetLang.addEventListener('change', () => {
+        if (targetLang.value === "so-SO") {
+            sourceLang.value = "om-ET";
+        } else {
+            sourceLang.value = "so-SO";
+        }
+    });
+</script>
+
+</body>
+</html>
