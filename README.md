@@ -1,0 +1,1 @@
+# Turjumaana-Turjumaan-Afaan-Oromoo-Afaan-Somaalii
